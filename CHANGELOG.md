@@ -1,3 +1,16 @@
+# Version 0.12.3 (May 16, 2020)
+
+## Fixes
+- Fix failing `Invoice::upcoming` by adding a `is_none` representation to InvoiceId (@bryanburgers)
+
+# Version 0.12.2 (May 15, 2020)
+
+## Features
+- Enable RustTLS behind a feature flag (@kiljacken)
+
+## Fixes
+- Add missing values to `PaymentMethodType` and `PaymentIntentMethodType` (@ThouCheese)
+
 # Version 0.12.1 (February 6, 2020)
 
 ## Fixes

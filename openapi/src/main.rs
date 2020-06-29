@@ -242,8 +242,14 @@ impl Generated {
         if let Some(other) = self.inferred_structs.get(&name) {
             let mut self_schema = struct_.schema.clone();
             let mut other_schema = other.schema.clone();
-            self_schema.as_object_mut().and_then(|x| x.remove("description"));
-            other_schema.as_object_mut().and_then(|x| x.remove("description"));
+            if let Some(x) = self_schema.as_object_mut() {
+                x.remove("description");
+                x.remove("title");
+            }
+            if let Some(x) = other_schema.as_object_mut() {
+                x.remove("description");
+                x.remove("title");
+            }
             if self_schema != other_schema {
                 return Err(other);
             }
@@ -315,6 +321,9 @@ fn gen_impl_object(meta: &Metadata, object: &str) -> String {
         state.use_ids.insert(id_type.clone());
         if let Some(doc) = schema["properties"]["id"]["description"].as_str() {
             print_doc_comment(&mut out, doc, 1);
+        }
+        if id_type == "InvoiceId" {
+            out.push_str("    #[serde(default = \"InvoiceId::none\")]");
         }
         out.push_str("    pub id: ");
         out.push_str(&id_type);
@@ -1689,7 +1698,7 @@ fn check_object_doc_url(object: &str) -> Option<String> {
     }
 
     // Make a request to the stripe docs to see if the path exists
-    if let Ok(mut resp) = reqwest::get(&doc_url) {
+    if let Ok(resp) = reqwest::blocking::get(&doc_url) {
         if resp.status().is_success() {
             let text = resp.text().unwrap();
             if text.contains("<title>Stripe API Reference") && text.contains("object</title>") {
