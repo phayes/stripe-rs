@@ -110,6 +110,8 @@ mod plan;
 #[cfg(feature = "billing")]
 mod price;
 #[cfg(feature = "billing")]
+mod session_ext;
+#[cfg(feature = "billing")]
 mod subscription;
 #[cfg(feature = "billing")]
 mod subscription_ext;
@@ -141,6 +143,8 @@ pub use self::line_item_ext::*;
 pub use self::plan::*;
 #[cfg(feature = "billing")]
 pub use self::price::*;
+#[cfg(feature = "billing")]
+pub use self::session_ext::*;
 #[cfg(feature = "billing")]
 pub use self::subscription::*;
 #[cfg(feature = "billing")]
