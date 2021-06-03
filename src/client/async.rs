@@ -1,12 +1,16 @@
-use crate::error::{Error, ErrorResponse, RequestError};
-use crate::params::{AppInfo, Headers};
-use crate::resources::ApiVersion;
+use std::future::Future;
+use std::pin::Pin;
+
 use futures_util::future;
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use http::request::Builder as RequestBuilder;
+use hyper::client::connect::dns::GaiResolver;
+use hyper::client::HttpConnector;
 use serde::de::DeserializeOwned;
-use std::future::Future;
-use std::pin::Pin;
+
+use crate::error::{Error, ErrorResponse, RequestError};
+use crate::params::{AppInfo, Headers};
+use crate::resources::ApiVersion;
 
 #[cfg(feature = "rustls-tls")]
 use hyper_rustls::HttpsConnector;
@@ -16,6 +20,16 @@ use hyper_tls::HttpsConnector;
 compile_error!("You must enable only one TLS implementation");
 #[cfg(not(any(feature = "default-tls", feature = "rustls-tls")))]
 compile_error!("You must enable at least one TLS implementation; add `features = [\"default-tls\"]` to your Cargo.toml");
+
+#[cfg(feature = "rustls-tls")]
+fn new_connector() -> hyper_rustls::HttpsConnector<HttpConnector<GaiResolver>> {
+    hyper_rustls::HttpsConnector::with_native_roots()
+}
+
+#[cfg(feature = "default-tls")]
+fn new_connector() -> hyper_tls::HttpsConnector<HttpConnector<GaiResolver>> {
+    hyper_tls::HttpsConnector::new()
+}
 
 type HttpClient = hyper::Client<HttpsConnector<hyper::client::HttpConnector>, hyper::Body>;
 
@@ -52,8 +66,8 @@ impl Client {
     pub fn from_url(scheme_host: impl Into<String>, secret_key: impl Into<String>) -> Client {
         let url = scheme_host.into();
         let host = if url.ends_with('/') { format!("{}v1", url) } else { format!("{}/v1", url) };
-        let https = HttpsConnector::new();
-        let client = hyper::Client::builder().build(https);
+        let https = new_connector();
+        let client = hyper::Client::builder().pool_max_idle_per_host(0).build(https);
         let mut headers = Headers::default();
         // TODO: Automatically determine the latest supported api version in codegen?
         headers.stripe_version = Some(ApiVersion::V2019_09_09);
